@@ -4,6 +4,8 @@ import math
 from fractions import Fraction
 from functools import reduce
 
+TIME_STEP = 0.001 #global const for precision of up to 0.001 for time-based operations
+
 def read_inputs(fin):
     try:
         with open(fin, 'r') as inputs: #file opened
@@ -49,8 +51,9 @@ def find_hyperperiod(periods):
     hyperperiod = Fraction(lcm_num, gcd_denom) #the hyperperiod (lcm of all periods) is the fraction lcd_num/gcd_denom
     return float(hyperperiod)
 
-def simulate_RM(tasks):
-    if(tasks): #sorting data
+def prep_RM(tasks):
+    #block needed to prepare data BEFORE simulation
+    if(tasks):
         executions = []
         periods = []
         deadlines = []
@@ -60,16 +63,50 @@ def simulate_RM(tasks):
             deadlines.append(task[2])
         
         if not isUniSchedulable(executions, periods):
-            return [False, None]
+            return 
 
         hyperperiod = find_hyperperiod(periods)
-    else:
-        return [False, None]
+        priorities = {} #priorities dict, key is task #, value is task period
+        for i in range(0, len(periods)):
+            priorities[i] = periods[i]
+        priorities = dict(sorted(priorities.items(), key=lambda item: item[1])) #sorting based on values of priorities dict
 
-def output_results(isSchedulable, preemptions):
-    if isSchedulable:
+        release_times = {} #dict to store release times, key is task#, value is array of release times
+        for key in priorities:
+            release_time = 0
+            release_times[key] = []
+            while release_time <= hyperperiod:
+                release_times[key].append(release_time)
+                release_time += periods[key]
+        
+        return {'executions': executions,
+                'periods': periods,
+                'deadlines': deadlines,
+                'hyperperiod': hyperperiod,
+                'priorities': priorities,
+                'release_times': release_times
+                }
+    else:
+        return 
+
+def simulate_RM(RM_params):
+    executions = RM_params['executions']
+    periods = RM_params['periods']
+    deadlines = RM_params['deadlines']
+    hyperperiod = RM_params['hyperperiod']
+    priorities = RM_params['priorities']
+    release_times = RM_params['release_times']
+
+    time_chart = [] #array used to store task executed at each time step of 0.001s
+
+    for i in range(0, hyperperiod, TIME_STEP):
+        curr_task = 
+
+
+def output_results(results):
+    if results:
         print(1)
-        print(preemptions)
+        print(results)
     else:
         print(0)
 
@@ -80,8 +117,12 @@ def main():
     args = parser.parse_args() #Assigning args from cmd to args var
     tasks = read_inputs(args.file) #Passing arg associated with inputs txt filepath for processing
 
-    results = simulate_RM(tasks)
-    #output_results(results[0], results[1])
+    RM_params = prep_RM(tasks)
+    if RM_params:
+        results = simulate_RM(RM_params)
+    else:
+        results = None
+    #output_results(results)
 
 if __name__ == "__main__":
     main()
