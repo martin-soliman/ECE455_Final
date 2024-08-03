@@ -4,8 +4,6 @@ import math
 from fractions import Fraction
 from functools import reduce
 
-
-
 def read_inputs(fin):
     try:
         with open(fin, 'r') as inputs: #file opened
@@ -18,6 +16,18 @@ def read_inputs(fin):
         print("File not found :(")
     except Exception as e: #other unexpected errors
         print(f"Error: {e}")
+
+def isUniSchedulable(executions, periods):
+    #ensuring that set of tasks can be scheduled on UNIprocessor system
+
+    tot_util = 0
+    for i in range(0,len(executions)):
+        tot_util += executions[i]/periods[i]
+
+    if tot_util > 1:
+        return False
+    else:
+        return True
 
 def gcd(a, b):
     return math.gcd(a, b) #returning gcd of a and b
@@ -40,7 +50,7 @@ def find_hyperperiod(periods):
     return float(hyperperiod)
 
 def simulate_RM(tasks):
-    if(tasks):
+    if(tasks): #sorting data
         executions = []
         periods = []
         deadlines = []
@@ -48,9 +58,11 @@ def simulate_RM(tasks):
             executions.append(task[0])
             periods.append(task[1])
             deadlines.append(task[2])
+        
+        if not isUniSchedulable(executions, periods):
+            return [False, None]
 
-        hyperperiod = find_hyperperiod(periods) #using reduce function to get LCM of periods
-        print(hyperperiod)
+        hyperperiod = find_hyperperiod(periods)
     else:
         return [False, None]
 
