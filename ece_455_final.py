@@ -167,7 +167,7 @@ def output_results(results):
             if i == len(results) - 1:
                 print(results[i])
             else:
-                print(f"{results[i]}", end=', ')
+                print(f"{results[i]}", end=',')
 
 def main():
     parser = argparse.ArgumentParser(description="Parse the inputs txt file") #Instantiating parser object
