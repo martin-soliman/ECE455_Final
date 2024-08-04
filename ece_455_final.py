@@ -76,7 +76,7 @@ def prep_RM(tasks):
         for key in priorities:
             priorities[key] = count
             count += 1
-        print(f"Priorities: {priorities}")
+        #print(f"Priorities: {priorities}")
 
         release_times = {} #dict to store release times, key is release time, value is array of tasks
         for key in priorities:
@@ -87,7 +87,7 @@ def prep_RM(tasks):
                 release_times[release_time].append(key)
                 release_time += periods[key]
         
-        print(f"Release times: {release_times}")
+        #print(f"Release times: {release_times}")
         
         return {'executions': executions,
                 'periods': periods,
@@ -126,7 +126,7 @@ def simulate_RM(RM_params):
 
         elif (i + 1)/INDEX_TO_TIME in release_times.keys(): #new task(s) released
             for task in release_times[(i + 1)/INDEX_TO_TIME]:
-                if(curr_task == -1 or priorities[task] < priorities[curr_task] or (start_time + t_exec - 1)): #processor is idle, new task is higher priority than curr task, or curr task JUST finished
+                if(curr_task == -1 or priorities[task] < priorities[curr_task] or i >= (start_time + t_exec - 1)): #processor is idle, new task is higher priority than curr task, or curr task JUST finished
                     if curr_task != -1 and i < (start_time + t_exec - 1): #if processor isn't idle and curr_task isn't already finished
                         release_queue.insert(0, [curr_task, executions[curr_task]*INDEX_TO_TIME - (i + 1 - start_time)]) #placing curr task and remaining exec time back on queue
                         preemptions[curr_task] += 1 #incrementing preemption count of curr task
@@ -140,7 +140,7 @@ def simulate_RM(RM_params):
                             count += 1
                         else:
                             break
-                    release_queue.insert(count, [task, executions[task]])
+                    release_queue.insert(count, [task, executions[task]*INDEX_TO_TIME])
                         
         elif i >= (start_time + t_exec - 1): #curr task finished execution
             if release_queue:
@@ -157,30 +157,33 @@ def simulate_RM(RM_params):
             output.append(preemptions[i])
         else:
             output.append(0)
-    print(f"Output: {output}")
+    #print(f"Output: {output}")
+    return output
 
 def output_results(results):
     if results:
         print(1)
-        print(results)
-    else:
-        print(0)
+        for i in range(0, len(results)):
+            if i == len(results) - 1:
+                print(results[i])
+            else:
+                print(f"{results[i]}", end=', ')
 
 def main():
-    # parser = argparse.ArgumentParser(description="Parse the inputs txt file") #Instantiating parser object
-    # parser.add_argument('file', type=str, help="Path to the txt file to be processed") #Adding argument to parser
+    parser = argparse.ArgumentParser(description="Parse the inputs txt file") #Instantiating parser object
+    parser.add_argument('file', type=str, help="Path to the txt file to be processed") #Adding argument to parser
     
-    # args = parser.parse_args() #Assigning args from cmd to args var
-    # tasks = read_inputs(args.file) #Passing arg associated with inputs txt filepath for processing
+    args = parser.parse_args() #Assigning args from cmd to args var
+    tasks = read_inputs(args.file) #Passing arg associated with inputs txt filepath for processing
 
-    tasks = [[1,3,3],[2,4,5]]
+    #tasks = [[1,3,3],[2,4,5]]
 
     RM_params = prep_RM(tasks)
     if RM_params:
         results = simulate_RM(RM_params)
     else:
         results = None
-    #output_results(results)
+    output_results(results)
 
 if __name__ == "__main__":
     main()
