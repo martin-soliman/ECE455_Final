@@ -71,6 +71,11 @@ def prep_RM(tasks):
         for i in range(0, len(periods)):
             priorities[i] = periods[i]
         priorities = dict(sorted(priorities.items(), key=lambda item: item[1])) #sorting based on values of priorities dict
+        
+        count = 1
+        for key in priorities:
+            priorities[key] = count
+            count += 1
         print(f"Priorities: {priorities}")
 
         release_times = {} #dict to store release times, key is release time, value is array of tasks
@@ -116,25 +121,18 @@ def simulate_RM(RM_params):
 
     for i in range(0, int((hyperperiod/TIME_STEP)+1)): #simulating up until hyperperiod
         time_chart.append(curr_task)
-        if (i + 1)/INDEX_TO_TIME not in release_times.keys() and (curr_task == -1 or i < (start_time + t_exec)): #no task(s) released AND (no task currently OR curr task is not finished execution)
+        if (i + 1)/INDEX_TO_TIME not in release_times.keys() and (curr_task == -1 or i < (start_time + t_exec - 1)): #no task(s) released AND (no task currently OR curr task is not finished execution)
             continue
-                
-        elif i >= (start_time + executions[curr_task]/TIME_STEP): #curr task finished execution
-            if release_queue:
-                released = release_queue.pop(0) #releasing next task
-                curr_task = released[0]
-                t_exec = released[1]
-                start_time = i #storing start time of release
-            else:
-                curr_task = -1; #no tasks to release (idle processor)
 
         elif (i + 1)/INDEX_TO_TIME in release_times.keys(): #new task(s) released
             for task in release_times[(i + 1)/INDEX_TO_TIME]:
-                if(curr_task == -1 or priorities[task] < priorities[curr_task]): #new task is higher priority than curr task
-                    release_queue.insert(0, [curr_task, executions[curr_task] - (i + TIME_STEP - start_time)]) #placing curr task and remaining exec time back on queue
-                    preemptions[curr_task] += 1 #incrementing preemption count of curr task
+                if(curr_task == -1 or priorities[task] < priorities[curr_task] or (start_time + t_exec - 1)): #processor is idle, new task is higher priority than curr task, or curr task JUST finished
+                    if curr_task != -1 and i < (start_time + t_exec - 1): #if processor isn't idle and curr_task isn't already finished
+                        release_queue.insert(0, [curr_task, executions[curr_task]*INDEX_TO_TIME - (i + 1 - start_time)]) #placing curr task and remaining exec time back on queue
+                        preemptions[curr_task] += 1 #incrementing preemption count of curr task
                     curr_task = task #updating curr task
-                    t_exec = executions[task] #updating remaining exec time
+                    t_exec = executions[task]*INDEX_TO_TIME #updating remaining exec time
+                    start_time = i + 1 #updating start_time
                 else: #place task in queue according to priority
                     count = 0
                     for n in release_queue:
@@ -143,6 +141,15 @@ def simulate_RM(RM_params):
                         else:
                             break
                     release_queue.insert(count, [task, executions[task]])
+                        
+        elif i >= (start_time + t_exec - 1): #curr task finished execution
+            if release_queue:
+                released = release_queue.pop(0) #releasing next task
+                curr_task = released[0]
+                t_exec = released[1]
+                start_time = i + 1 #storing start time of release
+            else:
+                curr_task = -1; #no tasks to release (idle processor)
         
     output = []
     for i in range(0, len(periods)):
