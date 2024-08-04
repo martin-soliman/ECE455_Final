@@ -5,6 +5,7 @@ from fractions import Fraction
 from functools import reduce
 
 TIME_STEP = 0.001 #global const for precision of up to 0.001 for time-based operations
+INDEX_TO_TIME = 1000 #global constant to convert time_chart index to corresponding time 
 
 def read_inputs(fin):
     try:
@@ -113,11 +114,12 @@ def simulate_RM(RM_params):
     t_exec = released[1]
     start_time = 0
 
-    for i in range(0, int((hyperperiod/TIME_STEP))): #simulating up until hyperperiod
-        if (i/TIME_STEP - TIME_STEP) not in release_times.keys() and (curr_task == -1 or i <= (start_time + t_exec)): #no task(s) released AND (no task currently OR curr task is not finished execution)
-            time_chart.append(curr_task)
-        
-        elif i > (start_time + executions[curr_task]): #curr task finished execution
+    for i in range(0, int((hyperperiod/TIME_STEP)+1)): #simulating up until hyperperiod
+        time_chart.append(curr_task)
+        if (i + 1)/INDEX_TO_TIME not in release_times.keys() and (curr_task == -1 or i < (start_time + t_exec)): #no task(s) released AND (no task currently OR curr task is not finished execution)
+            continue
+                
+        elif i >= (start_time + executions[curr_task]/TIME_STEP): #curr task finished execution
             if release_queue:
                 released = release_queue.pop(0) #releasing next task
                 curr_task = released[0]
@@ -125,12 +127,11 @@ def simulate_RM(RM_params):
                 start_time = i #storing start time of release
             else:
                 curr_task = -1; #no tasks to release (idle processor)
-            time_chart.append(curr_task)
 
-        elif (i/TIME_STEP - TIME_STEP) in release_times.keys(): #new task(s) released
-            for task in release_times[i/TIME_STEP - TIME_STEP]:
+        elif (i + 1)/INDEX_TO_TIME in release_times.keys(): #new task(s) released
+            for task in release_times[(i + 1)/INDEX_TO_TIME]:
                 if(curr_task == -1 or priorities[task] < priorities[curr_task]): #new task is higher priority than curr task
-                    release_queue.insert(0, [curr_task, i - start_time]) #placing curr task and remaining exec time back on queue
+                    release_queue.insert(0, [curr_task, executions[curr_task] - (i + TIME_STEP - start_time)]) #placing curr task and remaining exec time back on queue
                     preemptions[curr_task] += 1 #incrementing preemption count of curr task
                     curr_task = task #updating curr task
                     t_exec = executions[task] #updating remaining exec time
@@ -142,7 +143,6 @@ def simulate_RM(RM_params):
                         else:
                             break
                     release_queue.insert(count, [task, executions[task]])
-            time_chart.append(curr_task)
         
     output = []
     for i in range(0, len(periods)):
@@ -150,7 +150,7 @@ def simulate_RM(RM_params):
             output.append(preemptions[i])
         else:
             output.append(0)
-    print(output)
+    print(f"Output: {output}")
 
 def output_results(results):
     if results:
@@ -160,11 +160,13 @@ def output_results(results):
         print(0)
 
 def main():
-    parser = argparse.ArgumentParser(description="Parse the inputs txt file") #Instantiating parser object
-    parser.add_argument('file', type=str, help="Path to the txt file to be processed") #Adding argument to parser
+    # parser = argparse.ArgumentParser(description="Parse the inputs txt file") #Instantiating parser object
+    # parser.add_argument('file', type=str, help="Path to the txt file to be processed") #Adding argument to parser
     
-    args = parser.parse_args() #Assigning args from cmd to args var
-    tasks = read_inputs(args.file) #Passing arg associated with inputs txt filepath for processing
+    # args = parser.parse_args() #Assigning args from cmd to args var
+    # tasks = read_inputs(args.file) #Passing arg associated with inputs txt filepath for processing
+
+    tasks = [[1,3,3],[2,4,5]]
 
     RM_params = prep_RM(tasks)
     if RM_params:
