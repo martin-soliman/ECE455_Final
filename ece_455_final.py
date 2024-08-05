@@ -16,13 +16,12 @@ def read_inputs(fin):
                 rows.append([float(num) for num in row]) #list comprehension which converts each row to int values, and appends it to rows 2D sarray
         return rows
     except FileNotFoundError: #filepath does not exist
-        print("File not found :(")
+        return None
     except Exception as e: #other unexpected errors
-        print(f"Error: {e}")
+        return None
 
 def isUniSchedulable(executions, periods):
     #ensuring that set of tasks can be scheduled on UNIprocessor system
-
     tot_util = 0
     for i in range(0,len(executions)):
         tot_util += executions[i]/periods[i]
@@ -40,7 +39,6 @@ def lcm(a, b):
 
 def find_hyperperiod(periods):
     #since periods can be decimal up to 0.001 precision, we need to use fractions to find LCM 
-
     fracs = [Fraction(period).limit_denominator() for period in periods] #list comprehension to convert each float into a fraction
 
     nums = [frac.numerator for frac in fracs] #list comprehension for numerators
@@ -76,7 +74,6 @@ def prep_RM(tasks):
         for key in priorities:
             priorities[key] = count
             count += 1
-        #print(f"Priorities: {priorities}")
 
         release_times = {} #dict to store release times, key is release time, value is array of tasks
         for key in priorities:
@@ -86,8 +83,6 @@ def prep_RM(tasks):
                     release_times[release_time] = []
                 release_times[release_time].append(key)
                 release_time += periods[key]
-        
-        #print(f"Release times: {release_times}")
         
         return {'executions': executions,
                 'periods': periods,
@@ -179,7 +174,6 @@ def output_results(results):
     else:
         print(0)
 
-
 def main():
     parser = argparse.ArgumentParser(description="Parse the inputs txt file") #Instantiating parser object
     parser.add_argument('file', type=str, help="Path to the txt file to be processed") #Adding argument to parser
@@ -187,24 +181,10 @@ def main():
     args = parser.parse_args() #Assigning args from cmd to args var
     tasks = read_inputs(args.file) #Passing arg associated with inputs txt filepath for processing
 
-    # tasks = [[4,50,100], 
-    #          [1,25,100], 
-    #          [4,150,200],
-    #          [6,100,100],
-    #          [15,250,300],
-    #          [15,250,300],
-    #          [2,250,100],
-    #          [6,150,100],
-    #          [10,100,100],
-    #          [2,40,100],
-    #          [3,50,100],
-    #          [1,20,100],
-    #          [2,50,100],
-    #          [1,40,100],
-    #          [4,200,200],
-    #          ]
-
-    RM_params = prep_RM(tasks) #preparing data for simulation
+    if tasks:
+        RM_params = prep_RM(tasks) #preparing data for simulation
+    else:
+        RM_params = None
     
     if RM_params: #if successful, run simulation
         results = simulate_RM(RM_params) 
